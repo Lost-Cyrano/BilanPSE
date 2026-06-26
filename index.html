@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Swipable · 6 pages</title>
+  <title>Croix Rouge · Swipe</title>
   <style>
     /* ----- reset & base ----- */
     * {
@@ -13,33 +13,27 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    body {
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;   /* pas de scroll vertical ni horizontal */
+      background: #000;
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      background: #111;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 0;
-      touch-action: pan-y; /* permet le scroll vertical si besoin, mais on gère horizontal */
+      touch-action: none;  /* on désactive tout geste natif */
     }
 
-    /* conteneur principal – occupe tout l'écran sur mobile */
+    /* conteneur principal – occupe TOUT l'écran sans débordement */
     .app {
       position: relative;
-      width: 100%;
-      max-width: 480px;    /* agréable sur tablette/petit desktop */
+      width: 100vw;
       height: 100vh;
       height: 100dvh;      /* dynamic viewport height pour mobile */
-      max-height: 900px;
-      background: #1a1a2e;
       overflow: hidden;
-      box-shadow: 0 0 40px rgba(0,0,0,0.6);
-      touch-action: pan-y; /* neutralise le scroll horizontal natif */
+      background: #000;
+      touch-action: none;
     }
 
-    /* le "track" qui glisse horizontalement */
+    /* le track qui glisse horizontalement */
     .pages-track {
       display: flex;
       flex-wrap: nowrap;
@@ -47,10 +41,10 @@
       width: 100%;
       transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       will-change: transform;
-      touch-action: pan-y;  /* on garde le controle du swipe horizontal via JS */
+      touch-action: none;
     }
 
-    /* chaque page occupe 100% de la largeur du conteneur */
+    /* chaque page fait 100% de la largeur et hauteur */
     .page {
       flex: 0 0 100%;
       height: 100%;
@@ -58,173 +52,287 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 2rem 1.5rem;
-      color: #f0f0f0;
-      font-size: 1.6rem;
-      font-weight: 500;
+      padding: 1.5rem;
+      color: #fff;
+      font-size: 1.4rem;
       text-align: center;
-      background: #1a1a2e;
-      border-right: 1px solid rgba(255,255,255,0.04);
+      background: #000;   /* fallback, mais chaque page aura sa couleur */
       user-select: none;
-      overflow-y: auto;    /* si contenu long, scroll vertical à l'intérieur */
+      overflow: hidden;    /* pas de scroll interne */
+      border-right: 1px solid rgba(255,255,255,0.04);
     }
 
-    /* couleurs différentes pour visualiser les pages */
-    .page:nth-child(1) { background: #16213e; }
-    .page:nth-child(2) { background: #0f3460; }
-    .page:nth-child(3) { background: #533483; }
-    .page:nth-child(4) { background: #3b185f; }
-    .page:nth-child(5) { background: #1b1a3a; }
-    .page:nth-child(6) { background: #2a1e4a; }
+    /* ------ Thème clair (par défaut) : Rouge / Noir / Blanc ------ */
+    /* on applique les couleurs demandées pour le mode clair */
+    .page-light {
+      background: #ffffff;
+      color: #000000;
+    }
+    .page-light .page-number {
+      color: rgba(0,0,0,0.08);
+    }
+    .page-light .page-label {
+      color: #000000;
+    }
+    .page-light .highlight {
+      color: #e30713;
+    }
 
-    /* numéro de page en gros */
+    /* ------ Thème sombre (pour les écrans qui préfèrent dark) ------ */
+    @media (prefers-color-scheme: dark) {
+      .page-dark {
+        background: #1a1a1a;
+        color: #f0f0f0;
+      }
+      .page-dark .page-number {
+        color: rgba(255,255,255,0.06);
+      }
+      .page-dark .page-label {
+        color: #dddddd;
+      }
+      .page-dark .highlight {
+        color: #e30713;
+      }
+      /* on ajoute un fond léger pour les pages sombres */
+      .page-dark {
+        background: #111;
+      }
+      /* variante plus élégante */
+      .page-dark:nth-child(odd) { background: #0d0d0d; }
+      .page-dark:nth-child(even) { background: #1a1a1a; }
+    }
+
+    /* pour forcer le thème clair (démo) on peut commenter, mais on laisse les deux */
+    /* on applique les deux classes pour que le contenu soit lisible */
+    .page {
+      /* on utilise des variables pour une meilleure gestion */
+      --bg: #ffffff;
+      --text: #000000;
+      --accent: #e30713;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* on va utiliser un data-theme pour plus de contrôle */
+    .page[data-theme="light"] {
+      background: #ffffff;
+      color: #000000;
+    }
+    .page[data-theme="dark"] {
+      background: #121212;
+      color: #f0f0f0;
+    }
+
+    /* on mélange les deux pour un rendu cohérent */
+    .page[data-theme="light"] .page-number { color: rgba(0,0,0,0.08); }
+    .page[data-theme="dark"] .page-number { color: rgba(255,255,255,0.06); }
+
+    /* ----- contenu des pages ----- */
     .page-number {
-      font-size: 5rem;
+      font-size: 4.5rem;
       font-weight: 700;
-      color: rgba(255,255,255,0.15);
-      margin-bottom: 0.5rem;
       line-height: 1;
+      margin-bottom: 0.25rem;
     }
 
     .page-label {
-      font-size: 1.2rem;
-      opacity: 0.7;
-      letter-spacing: 1px;
+      font-size: 1.3rem;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+      opacity: 0.8;
     }
 
-    /* indicateur de pagination (dots) */
+    .highlight {
+      color: #e30713;
+      font-weight: 600;
+    }
+
+    /* petits emojis ou icônes */
+    .emoji-big {
+      font-size: 3.2rem;
+      margin-bottom: 0.3rem;
+    }
+
+    /* ----- pagination (dots) ----- */
     .pagination {
       position: absolute;
-      bottom: 24px;
+      bottom: 20px;
       left: 0;
       width: 100%;
       display: flex;
       justify-content: center;
-      gap: 10px;
-      pointer-events: none;  /* on clique à travers pour ne pas bloquer le swipe */
-      z-index: 5;
+      gap: 12px;
+      pointer-events: none;
+      z-index: 10;
     }
 
     .dot {
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.25);
       transition: background 0.25s, transform 0.25s;
       pointer-events: none;
+      box-shadow: 0 0 4px rgba(0,0,0,0.3);
     }
 
-    .dot.active {
-      background: #f5c842;
+    /* en mode clair, les dots sont plus sombres */
+    .dot.light-dot {
+      background: rgba(0,0,0,0.2);
+    }
+    .dot.light-dot.active {
+      background: #e30713;
       transform: scale(1.3);
-      box-shadow: 0 0 12px rgba(245, 200, 66, 0.4);
+      box-shadow: 0 0 14px rgba(227, 7, 19, 0.5);
     }
 
-    /* petit footer d'info / aide */
-    .hint {
-      position: absolute;
-      bottom: 68px;
-      left: 0;
-      width: 100%;
-      text-align: center;
-      color: rgba(255,255,255,0.2);
-      font-size: 0.75rem;
-      letter-spacing: 1px;
-      pointer-events: none;
-      z-index: 4;
-      font-weight: 300;
+    .dot.dark-dot {
+      background: rgba(255,255,255,0.2);
+    }
+    .dot.dark-dot.active {
+      background: #e30713;
+      transform: scale(1.3);
+      box-shadow: 0 0 14px rgba(227, 7, 19, 0.5);
     }
 
-    /* ----- responsive fine tuning ----- */
+    /* on adapte selon le thème */
+    @media (prefers-color-scheme: dark) {
+      .dot {
+        background: rgba(255,255,255,0.2);
+      }
+      .dot.active {
+        background: #e30713;
+        transform: scale(1.3);
+        box-shadow: 0 0 14px rgba(227, 7, 19, 0.5);
+      }
+    }
+
+    /* ----- responsive finetuning ----- */
     @media (max-width: 480px) {
-      .page {
-        padding: 1.5rem 1rem;
-        font-size: 1.4rem;
-      }
-      .page-number {
-        font-size: 4rem;
-      }
+      .page-number { font-size: 3.6rem; }
+      .page-label { font-size: 1.1rem; }
+      .emoji-big { font-size: 2.8rem; }
+      .pagination { bottom: 16px; gap: 10px; }
     }
 
     @media (max-height: 600px) {
-      .page-number {
-        font-size: 3.2rem;
-      }
-      .page {
-        padding: 1rem;
-      }
-      .pagination {
-        bottom: 12px;
-        gap: 8px;
-      }
-      .hint {
-        bottom: 44px;
-        font-size: 0.6rem;
-      }
+      .page-number { font-size: 3rem; }
+      .page-label { font-size: 1rem; }
+      .emoji-big { font-size: 2.2rem; }
+      .pagination { bottom: 12px; }
     }
 
-    /* pour les écrans larges on garde une belle mise en page */
-    @media (min-width: 600px) {
-      .app {
-        border-radius: 24px;
-        height: 90vh;
-        max-height: 800px;
-        margin: 1rem;
-      }
+    /* pas de scroll, tout est plein écran */
+    .app, .pages-track, .page {
+      overflow: hidden;
     }
   </style>
 </head>
 <body>
 <div class="app" id="app">
-  <div class="pages-track" id="pagesTrack">
-  </div>
-
+  <div class="pages-track" id="pagesTrack"></div>
   <div class="pagination" id="pagination"></div>
 </div>
 
 <script>
   (function() {
-    // ----- CONFIGURATION FACILE À MODIFIER -----
-    // Ajoutez, supprimez ou modifiez des pages dans ce tableau.
-    // Chaque page est un objet { content: "votre texte" }
-    // Vous pouvez aussi ajouter des classes ou styles si besoin.
+    // ============================================================
+    //  CONFIGURATION FACILE À MODIFIER
+    //  Ajoutez, supprimez ou modifiez des pages dans ce tableau.
+    //  Chaque page est un objet avec :
+    //    - content : du texte ou HTML (peut contenir des classes)
+    //    - theme   : 'light' ou 'dark' (optionnel, par défaut 'light')
+    // ============================================================
     const PAGES = [
-      { content: "🏝️<br><span style='font-size:2rem;'>Page 1</span><br><span style='font-size:1rem; opacity:0.6;'>Bienvenue</span>" },
-      { content: "🌸<br><span style='font-size:2rem;'>Page 2</span><br><span style='font-size:1rem; opacity:0.6;'>Découverte</span>" },
-      { content: "🌿<br><span style='font-size:2rem;'>Page 3</span><br><span style='font-size:1rem; opacity:0.6;'>Exploration</span>" },
-      { content: "🌊<br><span style='font-size:2rem;'>Page 4</span><br><span style='font-size:1rem; opacity:0.6;'>Profondeur</span>" },
-      { content: "🔥<br><span style='font-size:2rem;'>Page 5</span><br><span style='font-size:1rem; opacity:0.6;'>Énergie</span>" },
-      { content: "🌙<br><span style='font-size:2rem;'>Page 6</span><br><span style='font-size:1rem; opacity:0.6;'>Sérénité</span>" }
+      { 
+        content: `<div class="emoji-big">🇫🇷</div>
+                  <div class="page-number">1</div>
+                  <div class="page-label">Croix-Rouge <span class="highlight">française</span></div>
+                  <div style="margin-top:1rem; font-size:0.9rem; opacity:0.7;">Swipez pour découvrir</div>`,
+        theme: 'light'
+      },
+      { 
+        content: `<div class="emoji-big">❤️</div>
+                  <div class="page-number">2</div>
+                  <div class="page-label">Solidarité · <span class="highlight">Urgence</span></div>
+                  <div style="margin-top:0.8rem; font-size:0.9rem; opacity:0.7;">Présents partout</div>`,
+        theme: 'light'
+      },
+      { 
+        content: `<div class="emoji-big">🩸</div>
+                  <div class="page-number">3</div>
+                  <div class="page-label">Don du sang · <span class="highlight">Vie</span></div>
+                  <div style="margin-top:0.8rem; font-size:0.9rem; opacity:0.7;">Un geste qui sauve</div>`,
+        theme: 'light'
+      },
+      { 
+        content: `<div class="emoji-big">🤝</div>
+                  <div class="page-number">4</div>
+                  <div class="page-label">Bénévolat · <span class="highlight">Engagement</span></div>
+                  <div style="margin-top:0.8rem; font-size:0.9rem; opacity:0.7;">Rejoignez-nous</div>`,
+        theme: 'light'
+      },
+      { 
+        content: `<div class="emoji-big">🌍</div>
+                  <div class="page-number">5</div>
+                  <div class="page-label">International · <span class="highlight">Mouvement</span></div>
+                  <div style="margin-top:0.8rem; font-size:0.9rem; opacity:0.7;">Présence mondiale</div>`,
+        theme: 'light'
+      },
+      { 
+        content: `<div class="emoji-big">🕊️</div>
+                  <div class="page-number">6</div>
+                  <div class="page-label">Paix · <span class="highlight">Neutralité</span></div>
+                  <div style="margin-top:0.8rem; font-size:0.9rem; opacity:0.7;">Nos principes</div>`,
+        theme: 'light'
+      }
     ];
 
+    // ============================================================
+    //  NE RIEN MODIFIER CI-DESSOUS SAUF SI VOUS SAVEZ
+    // ============================================================
 
     const track = document.getElementById('pagesTrack');
     const pagination = document.getElementById('pagination');
     let currentIndex = 0;
     let isTransitioning = false;
     let startX = 0;
-    let currentX = 0;
+    let deltaX = 0;
     let isDragging = false;
 
+    // Construire les pages
     function buildPages() {
       track.innerHTML = '';
       PAGES.forEach((pageData, index) => {
         const pageDiv = document.createElement('div');
         pageDiv.className = 'page';
+        // Appliquer le thème (light par défaut)
+        const theme = pageData.theme || 'light';
+        pageDiv.setAttribute('data-theme', theme);
+        // Ajouter aussi une classe pour le style additionnel
+        pageDiv.classList.add(theme === 'light' ? 'page-light' : 'page-dark');
         pageDiv.innerHTML = pageData.content || `Page ${index + 1}`;
-        pageDiv.dataset.index = index;
         track.appendChild(pageDiv);
       });
 
+      // Construire les dots (avec thème adapté)
       pagination.innerHTML = '';
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       PAGES.forEach((_, index) => {
         const dot = document.createElement('span');
         dot.className = 'dot';
         if (index === 0) dot.classList.add('active');
+        // on ajoute une classe pour le thème (pour les couleurs)
+        if (isDark) {
+          dot.classList.add('dark-dot');
+        } else {
+          dot.classList.add('light-dot');
+        }
         pagination.appendChild(dot);
       });
     }
 
+    // Mise à jour de la position
     function updateSlide(index, animate = true) {
       if (index < 0) index = 0;
       if (index >= PAGES.length) index = PAGES.length - 1;
@@ -234,12 +342,14 @@
       track.style.transition = animate ? 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none';
       track.style.transform = `translateX(${offset}%)`;
 
+      // Mettre à jour les dots
       const dots = pagination.querySelectorAll('.dot');
       dots.forEach((dot, i) => {
         dot.classList.toggle('active', i === index);
       });
     }
 
+    // Gestion du swipe (touch + souris)
     function initSwipe() {
       let startX = 0;
       let startY = 0;
@@ -259,14 +369,16 @@
         if (!isSwiping) return;
         const diffX = x - startX;
         const diffY = y - startY;
-        if (Math.abs(diffX) > 10 && Math.abs(diffX) > Math.abs(diffY) * 1.2) {
+        // on détecte un swipe horizontal uniquement
+        if (Math.abs(diffX) > 8 && Math.abs(diffX) > Math.abs(diffY) * 1.2) {
           const currentOffset = -currentIndex * 100;
           const percentMove = (diffX / track.parentElement.offsetWidth) * 100;
           let newOffset = currentOffset + percentMove;
-          if (currentIndex === 0 && newOffset > 0) newOffset = newOffset * 0.3;
+          // effet de tension aux bords
+          if (currentIndex === 0 && newOffset > 0) newOffset = newOffset * 0.25;
           if (currentIndex === PAGES.length - 1 && newOffset < -(PAGES.length - 1) * 100) {
             const maxOffset = -(PAGES.length - 1) * 100;
-            newOffset = maxOffset + (newOffset - maxOffset) * 0.3;
+            newOffset = maxOffset + (newOffset - maxOffset) * 0.25;
           }
           track.style.transform = `translateX(${newOffset}%)`;
           deltaX = diffX;
@@ -281,7 +393,7 @@
         isSwiping = false;
         track.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
 
-        const threshold = 30;
+        const threshold = 25;
         if (deltaX < -threshold && currentIndex < PAGES.length - 1) {
           currentIndex++;
         } else if (deltaX > threshold && currentIndex > 0) {
@@ -291,6 +403,7 @@
         deltaX = 0;
       };
 
+      // --- événements tactiles ---
       track.addEventListener('touchstart', (e) => {
         const touch = e.touches[0];
         handleStart(touch.clientX, touch.clientY);
@@ -299,7 +412,7 @@
       track.addEventListener('touchmove', (e) => {
         const touch = e.touches[0];
         handleMove(touch.clientX, touch.clientY);
-        if (isSwiping && Math.abs(deltaX) > 20) {
+        if (isSwiping && Math.abs(deltaX) > 15) {
           e.preventDefault();
         }
       }, { passive: false });
@@ -308,11 +421,12 @@
         handleEnd();
       }, { passive: true });
 
+      // --- événements souris ---
       let mouseDown = false;
       track.addEventListener('mousedown', (e) => {
         mouseDown = true;
         handleStart(e.clientX, e.clientY);
-        e.preventDefault(); 
+        e.preventDefault();
       });
 
       window.addEventListener('mousemove', (e) => {
@@ -335,62 +449,59 @@
       });
     }
 
+    // --- Initialisation ---
     buildPages();
     updateSlide(0, false);
     initSwipe();
 
-    window.__swipeApp = { updateSlide, currentIndex: () => currentIndex, PAGES };
-    window.__swipeApp.addPage = function(content) {
-      PAGES.push({ content: content || `Page ${PAGES.length + 1}` });
-      buildPages();
-      updateSlide(currentIndex, false);
-      const newTrack = track.cloneNode(true);
-      track.parentNode.replaceChild(newTrack, track);
-
-      resetApp();
+    // --- API externe pour ajouter / modifier facilement ---
+    window.__swipeApp = {
+      // Ajouter une page (ex: __swipeApp.addPage({ content: '...', theme: 'dark' }))
+      addPage: function(pageData) {
+        if (!pageData.content) pageData.content = `Page ${PAGES.length + 1}`;
+        if (!pageData.theme) pageData.theme = 'light';
+        PAGES.push(pageData);
+        // reconstruire tout
+        const app = document.getElementById('app');
+        const oldTrack = document.getElementById('pagesTrack');
+        const oldPagination = document.getElementById('pagination');
+        
+        const newTrack = document.createElement('div');
+        newTrack.id = 'pagesTrack';
+        newTrack.className = 'pages-track';
+        const newPagination = document.createElement('div');
+        newPagination.id = 'pagination';
+        newPagination.className = 'pagination';
+        
+        oldTrack.parentNode.replaceChild(newTrack, oldTrack);
+        oldPagination.parentNode.replaceChild(newPagination, oldPagination);
+        
+        // on remet les références
+        window.__swipeApp.track = newTrack;
+        window.__swipeApp.pagination = newPagination;
+        
+        // rebuild
+        buildPages();
+        updateSlide(0, false);
+        initSwipe();
+        console.log('📄 Page ajoutée ! Total :', PAGES.length);
+      },
+      // Obtenir la liste des pages
+      getPages: () => PAGES,
+      // Aller à une page spécifique (index)
+      goTo: function(index) {
+        if (index >= 0 && index < PAGES.length) {
+          updateSlide(index, true);
+        }
+      }
     };
 
-    function resetApp() {
-      const app = document.getElementById('app');
-      const oldTrack = document.getElementById('pagesTrack');
-      const oldPagination = document.getElementById('pagination');
-      
-      const newTrack = document.createElement('div');
-      newTrack.id = 'pagesTrack';
-      newTrack.className = 'pages-track';
-      
-      const newPagination = document.createElement('div');
-      newPagination.id = 'pagination';
-      newPagination.className = 'pagination';
-      
-      oldTrack.parentNode.replaceChild(newTrack, oldTrack);
-      oldPagination.parentNode.replaceChild(newPagination, oldPagination);
-      
-      const trackRef = document.getElementById('pagesTrack');
-      const paginationRef = document.getElementById('pagination');
-      
-      trackRef.innerHTML = '';
-      PAGES.forEach((pageData) => {
-        const pageDiv = document.createElement('div');
-        pageDiv.className = 'page';
-        pageDiv.innerHTML = pageData.content || 'Page';
-        trackRef.appendChild(pageDiv);
-      });
-      
-      paginationRef.innerHTML = '';
-      PAGES.forEach((_, index) => {
-        const dot = document.createElement('span');
-        dot.className = 'dot';
-        if (index === 0) dot.classList.add('active');
-        paginationRef.appendChild(dot);
-      });
-      
-      currentIndex = 0;
-      updateSlide(0, false);
-      initSwipe();
-    }
+    // Initialiser les références
+    window.__swipeApp.track = track;
+    window.__swipeApp.pagination = pagination;
 
-
+    console.log('📱 Swipe App – Pour ajouter une page : __swipeApp.addPage({ content: "...", theme: "light" })');
+    console.log('📄 Pages actuelles :', PAGES.length);
   })();
 </script>
 </body>
