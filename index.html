@@ -1,654 +1,1018 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Croix Rouge · Swipe</title>
-  <style>
-    /* ----- reset & base ----- */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #000;
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      touch-action: none;
-    }
-    .app {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      height: 100dvh;
-      overflow: hidden;
-      background: #000;
-      touch-action: none;
-    }
-    .pages-track {
-      display: flex;
-      flex-wrap: nowrap;
-      height: 100%;
-      width: 100%;
-      transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      will-change: transform;
-      touch-action: none;
-    }
-    .page {
-      flex: 0 0 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 1.2rem 1.5rem;
-      text-align: center;
-      user-select: none;
-      overflow: hidden;
-      border-right: 1px solid rgba(255,255,255,0.04);
-      background: var(--bg-page);
-      color: var(--text-page);
-      /* Permet aux inputs de recevoir le focus */
-      touch-action: auto;
-    }
-    /* --- Variables de thème (changent automatiquement avec prefers-color-scheme) --- */
-    :root {
-      --bg-page: #ffffff;
-      --text-page: #000000;
-      --dot-bg: rgba(0,0,0,0.2);
-      --dot-active: #e30713;
-      --input-bg: #ffffff;
-      --input-border: #cccccc;
-      --input-color: #111;
-      --placeholder-color: #888;
-      --warning-color: #e30713;
-      --warning-valid: #2e7d32;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg-page: #121212;
-        --text-page: #f0f0f0;
-        --dot-bg: rgba(255,255,255,0.2);
-        --dot-active: #e30713;
-        --input-bg: #2a2a2a;
-        --input-border: #555;
-        --input-color: #f0f0f0;
-        --placeholder-color: #aaa;
-        --warning-color: #e30713;
-        --warning-valid: #66bb6a;
-      }
-    }
-    .page .page-number { color: var(--text-page); opacity: 0.08; font-size: 4.5rem; font-weight: 700; line-height: 1; }
-    .page .page-label { color: var(--text-page); opacity: 0.7; font-size: 1.3rem; }
-    .page .highlight { color: #e30713; font-weight: 600; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Croix Rouge · Swipe</title>
+    <style>
+        /* ----- reset & base ----- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            touch-action: none;
+        }
+        .app {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            background: #000;
+            touch-action: none;
+        }
+        .pages-track {
+            display: flex;
+            flex-wrap: nowrap;
+            height: 100%;
+            width: 100%;
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            will-change: transform;
+            touch-action: none;
+        }
+        .page {
+            flex: 0 0 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1.2rem 1.5rem;
+            text-align: center;
+            user-select: none;
+            overflow: hidden;
+            border-right: 1px solid rgba(255, 255, 255, 0.04);
+            background: var(--bg-page);
+            color: var(--text-page);
+            touch-action: auto;
+        }
 
-    /* --- Conteneur des éléments de formulaire --- */
-    .form-container {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-evenly;
-      align-items: stretch;
-      gap: 0.3rem;
-      padding: 0.2rem 0;
-      overflow: hidden;
-      touch-action: auto;
-    }
-    .form-item {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      justify-content: center;
-      flex: 1 1 auto;
-      min-height: 0;
-      touch-action: auto;
-    }
-    .form-item label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      letter-spacing: 0.3px;
-      opacity: 0.8;
-      margin-bottom: 0.1rem;
-      width: 100%;
-      text-align: left;
-      color: var(--text-page);
-      touch-action: auto;
-    }
-    .form-item input,
-    .form-item select {
-      width: 100%;
-      padding: 0.5rem 0.6rem;
-      font-size: 0.95rem;
-      border: 1px solid var(--input-border);
-      border-radius: 8px;
-      background: var(--input-bg);
-      color: var(--input-color);
-      outline: none;
-      transition: border 0.2s;
-      font-family: inherit;
-      -webkit-appearance: none;
-      appearance: none;
-      /* Important : permet l'interaction */
-      pointer-events: auto;
-      touch-action: auto;
-      cursor: text;
-    }
-    .form-item input::placeholder {
-      color: var(--placeholder-color);
-      opacity: 0.6;
-    }
-    .form-item input:focus,
-    .form-item select:focus {
-      border-color: #e30713;
-      box-shadow: 0 0 0 2px rgba(227,7,19,0.2);
-    }
-    .form-item .warning-text {
-      font-size: 0.75rem;
-      color: var(--warning-color);
-      margin-top: 0.15rem;
-      width: 100%;
-      text-align: left;
-      min-height: 1.2rem;
-      opacity: 0.9;
-      font-weight: 500;
-      transition: color 0.2s;
-      pointer-events: none;
-    }
-    .form-item .image-placeholder {
-      width: 100%;
-      background: rgba(227,7,19,0.08);
-      border-radius: 10px;
-      padding: 0.6rem;
-      text-align: center;
-      font-size: 0.85rem;
-      color: #e30713;
-      border: 1px dashed #e30713;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 2.8rem;
-      pointer-events: none;
-    }
-    .form-item .image-placeholder img {
-      max-width: 100%;
-      max-height: 4rem;
-      object-fit: contain;
-      border-radius: 6px;
-    }
-    .form-item .bool-group {
-      display: flex;
-      gap: 1rem;
-      width: 100%;
-      padding-top: 0.2rem;
-      touch-action: auto;
-    }
-    .form-item .bool-group label {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-weight: 400;
-      font-size: 0.9rem;
-      cursor: pointer;
-      opacity: 1;
-      touch-action: auto;
-      pointer-events: auto;
-    }
-    .form-item .bool-group input[type="radio"] {
-      width: 1rem;
-      height: 1rem;
-      accent-color: #e30713;
-      flex-shrink: 0;
-      pointer-events: auto;
-      touch-action: auto;
-      cursor: pointer;
-    }
-    .form-item .select-with-other {
-      display: flex;
-      width: 100%;
-      gap: 0.4rem;
-      align-items: center;
-      touch-action: auto;
-    }
-    .form-item .select-with-other select {
-      flex: 2;
-      pointer-events: auto;
-      touch-action: auto;
-      cursor: pointer;
-    }
-    .form-item .select-with-other input {
-      flex: 1;
-      min-width: 0;
-      pointer-events: auto;
-      touch-action: auto;
-      cursor: text;
-    }
+        /* --- Thème clair (par défaut) --- */
+        :root {
+            --bg-page: #ffffff;
+            --text-page: #000000;
+            --dot-bg: rgba(0, 0, 0, 0.2);
+            --dot-active: #e30713;
+            --input-bg: #ffffff;
+            --input-border: #cccccc;
+            --input-color: #111;
+            --placeholder-color: #888;
+            --warning-color: #e30713;
+            --warning-valid: #2e7d32;
+            --btn-bg: #e30713;
+            --btn-text: #ffffff;
+            --btn-hover: #c00611;
+        }
 
-    /* --- Pagination (dots) --- */
-    .pagination {
-      position: absolute;
-      bottom: 14px;
-      left: 0;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      pointer-events: none;
-      z-index: 20;
-    }
-    .dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--dot-bg);
-      transition: background 0.25s, transform 0.25s;
-      pointer-events: none;
-      box-shadow: 0 0 4px rgba(0,0,0,0.1);
-    }
-    .dot.active {
-      background: var(--dot-active);
-      transform: scale(1.3);
-      box-shadow: 0 0 12px rgba(227,7,19,0.4);
-    }
+        /* --- Thème sombre (activé via la classe .dark-theme sur le body) --- */
+        body.dark-theme {
+            --bg-page: #121212;
+            --text-page: #f0f0f0;
+            --dot-bg: rgba(255, 255, 255, 0.2);
+            --dot-active: #e30713;
+            --input-bg: #2a2a2a;
+            --input-border: #555;
+            --input-color: #f0f0f0;
+            --placeholder-color: #aaa;
+            --warning-color: #e30713;
+            --warning-valid: #66bb6a;
+            --btn-bg: #e30713;
+            --btn-text: #ffffff;
+            --btn-hover: #c00611;
+        }
 
-    /* --- Responsive fine --- */
-    @media (max-width: 480px) {
-      .page { padding: 0.8rem 1rem; }
-      .form-item label { font-size: 0.7rem; }
-      .form-item input, .form-item select { font-size: 0.85rem; padding: 0.4rem 0.5rem; }
-      .form-item .warning-text { font-size: 0.65rem; }
-      .page .page-number { font-size: 3.6rem; }
-      .page .page-label { font-size: 1.1rem; }
-    }
-    @media (max-height: 600px) {
-      .page { padding: 0.5rem 0.8rem; }
-      .form-item label { font-size: 0.65rem; }
-      .form-item input, .form-item select { font-size: 0.75rem; padding: 0.3rem 0.4rem; }
-      .form-item .warning-text { font-size: 0.6rem; min-height: 1rem; }
-      .form-item .image-placeholder { min-height: 2rem; padding: 0.3rem; }
-      .pagination { bottom: 8px; gap: 8px; }
-      .dot { width: 8px; height: 8px; }
-      .page .page-number { font-size: 3rem; }
-      .page .page-label { font-size: 0.9rem; }
-    }
-  </style>
+        .page .page-number {
+            color: var(--text-page);
+            opacity: 0.08;
+            font-size: 4.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .page .page-label {
+            color: var(--text-page);
+            opacity: 0.7;
+            font-size: 1.3rem;
+        }
+        .page .highlight {
+            color: #e30713;
+            font-weight: 600;
+        }
+
+        /* --- Conteneur des éléments de formulaire --- */
+        .form-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            align-items: stretch;
+            gap: 0.3rem;
+            padding: 0.2rem 0;
+            overflow: hidden;
+            touch-action: auto;
+        }
+        .form-item {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            flex: 1 1 auto;
+            min-height: 0;
+            touch-action: auto;
+        }
+        .form-item label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            opacity: 0.8;
+            margin-bottom: 0.1rem;
+            width: 100%;
+            text-align: left;
+            color: var(--text-page);
+            touch-action: auto;
+        }
+        .form-item input,
+        .form-item select {
+            width: 100%;
+            padding: 0.5rem 0.6rem;
+            font-size: 0.95rem;
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            background: var(--input-bg);
+            color: var(--input-color);
+            outline: none;
+            transition: border 0.2s;
+            font-family: inherit;
+            -webkit-appearance: none;
+            appearance: none;
+            pointer-events: auto;
+            touch-action: auto;
+            cursor: text;
+        }
+        .form-item input::placeholder {
+            color: var(--placeholder-color);
+            opacity: 0.6;
+        }
+        .form-item input:focus,
+        .form-item select:focus {
+            border-color: #e30713;
+            box-shadow: 0 0 0 2px rgba(227, 7, 19, 0.2);
+        }
+        .form-item .warning-text {
+            font-size: 0.75rem;
+            color: var(--warning-color);
+            margin-top: 0.15rem;
+            width: 100%;
+            text-align: left;
+            min-height: 1.2rem;
+            opacity: 0.9;
+            font-weight: 500;
+            transition: color 0.2s;
+            pointer-events: none;
+        }
+        .form-item .image-placeholder {
+            width: 100%;
+            background: rgba(227, 7, 19, 0.08);
+            border-radius: 10px;
+            padding: 0.6rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #e30713;
+            border: 1px dashed #e30713;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 2.8rem;
+            pointer-events: none;
+        }
+        .form-item .image-placeholder img {
+            max-width: 100%;
+            max-height: 4rem;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+
+        /* --- Booléen : cases à cocher --- */
+        .form-item .bool-group {
+            display: flex;
+            gap: 1.5rem;
+            width: 100%;
+            padding-top: 0.2rem;
+            touch-action: auto;
+            align-items: center;
+        }
+        .form-item .bool-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 400;
+            font-size: 0.9rem;
+            cursor: pointer;
+            opacity: 1;
+            touch-action: auto;
+            pointer-events: auto;
+            color: var(--text-page);
+        }
+        .form-item .bool-group input[type="checkbox"] {
+            width: 1.2rem;
+            height: 1.2rem;
+            accent-color: #e30713;
+            flex-shrink: 0;
+            pointer-events: auto;
+            touch-action: auto;
+            cursor: pointer;
+            border-radius: 4px;
+            border: 2px solid var(--input-border);
+            background: var(--input-bg);
+            -webkit-appearance: none;
+            appearance: none;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .form-item .bool-group input[type="checkbox"]:checked {
+            background: #e30713;
+            border-color: #e30713;
+        }
+        .form-item .bool-group input[type="checkbox"]:checked::after {
+            content: "✓";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .form-item .bool-group input[type="checkbox"]:focus {
+            outline: 2px solid rgba(227, 7, 19, 0.3);
+        }
+
+        .form-item .select-with-other {
+            display: flex;
+            width: 100%;
+            gap: 0.4rem;
+            align-items: center;
+            touch-action: auto;
+        }
+        .form-item .select-with-other select {
+            flex: 2;
+            pointer-events: auto;
+            touch-action: auto;
+            cursor: pointer;
+        }
+        .form-item .select-with-other input {
+            flex: 1;
+            min-width: 0;
+            pointer-events: auto;
+            touch-action: auto;
+            cursor: text;
+        }
+
+        /* --- Pagination (dots) + bouton thème --- */
+        .pagination-wrapper {
+            position: absolute;
+            bottom: 14px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            z-index: 20;
+            pointer-events: none;
+        }
+        .pagination {
+            display: flex;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--dot-bg);
+            transition: background 0.25s, transform 0.25s;
+            pointer-events: none;
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+        }
+        .dot.active {
+            background: var(--dot-active);
+            transform: scale(1.3);
+            box-shadow: 0 0 12px rgba(227, 7, 19, 0.4);
+        }
+
+        /* Bouton de changement de thème */
+        .theme-toggle {
+            pointer-events: auto;
+            cursor: pointer;
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            flex-shrink: 0;
+            margin-left: 4px;
+        }
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            background: var(--btn-hover);
+        }
+        .theme-toggle:active {
+            transform: scale(0.95);
+        }
+
+        /* --- Responsive fine --- */
+        @media (max-width: 480px) {
+            .page {
+                padding: 0.8rem 1rem;
+            }
+            .form-item label {
+                font-size: 0.7rem;
+            }
+            .form-item input,
+            .form-item select {
+                font-size: 0.85rem;
+                padding: 0.4rem 0.5rem;
+            }
+            .form-item .warning-text {
+                font-size: 0.65rem;
+            }
+            .page .page-number {
+                font-size: 3.6rem;
+            }
+            .page .page-label {
+                font-size: 1.1rem;
+            }
+            .theme-toggle {
+                width: 28px;
+                height: 28px;
+                font-size: 0.85rem;
+            }
+        }
+        @media (max-height: 600px) {
+            .page {
+                padding: 0.5rem 0.8rem;
+            }
+            .form-item label {
+                font-size: 0.65rem;
+            }
+            .form-item input,
+            .form-item select {
+                font-size: 0.75rem;
+                padding: 0.3rem 0.4rem;
+            }
+            .form-item .warning-text {
+                font-size: 0.6rem;
+                min-height: 1rem;
+            }
+            .form-item .image-placeholder {
+                min-height: 2rem;
+                padding: 0.3rem;
+            }
+            .pagination-wrapper {
+                bottom: 8px;
+                gap: 8px;
+            }
+            .pagination {
+                gap: 8px;
+            }
+            .dot {
+                width: 8px;
+                height: 8px;
+            }
+            .page .page-number {
+                font-size: 3rem;
+            }
+            .page .page-label {
+                font-size: 0.9rem;
+            }
+            .theme-toggle {
+                width: 24px;
+                height: 24px;
+                font-size: 0.75rem;
+            }
+        }
+    </style>
 </head>
 <body>
-<div class="app" id="app">
-  <div class="pages-track" id="pagesTrack"></div>
-  <div class="pagination" id="pagination"></div>
-</div>
+    <div class="app" id="app">
+        <div class="pages-track" id="pagesTrack"></div>
+        <div class="pagination-wrapper">
+            <div class="pagination" id="pagination"></div>
+            <button class="theme-toggle" id="themeToggle" aria-label="Changer de thème">🌓</button>
+        </div>
+    </div>
 
-<script>
-  (function() {
-    // ================================================================
-    //  PAGES : seulement 2 pages d'exemple avec tous les types de champs
-    //  Ajoutez, supprimez ou modifiez les pages dans ce tableau.
-    //  Chaque page : { content: HTML }
-    //  Le thème (clair/sombre) est automatique via CSS variables.
-    // ================================================================
-    const PAGES = [
-      {
-        content: `
-          <div class="form-container">
-            <div class="form-item">
-              <label>📝 Titre</label>
-              <input type="text" placeholder="Mon titre" value="Formulaire exemple">
-            </div>
-            <div class="form-item">
-              <label>🔤 Texte</label>
-              <input type="text" placeholder="Saisissez du texte">
-            </div>
-            <div class="form-item">
-              <label>🔢 Entier</label>
-              <input type="number" step="1" placeholder="42" value="25">
-            </div>
-            <div class="form-item">
-              <label>🔢 Float</label>
-              <input type="number" step="0.01" placeholder="3.14" value="2.5">
-            </div>
-            <div class="form-item">
-              <label>⚡ Booléen</label>
-              <div class="bool-group">
-                <label><input type="radio" name="bool1" value="true" checked> Oui</label>
-                <label><input type="radio" name="bool1" value="false"> Non</label>
-              </div>
-            </div>
-            <div class="form-item">
-              <label>🖼️ Image</label>
-              <div class="image-placeholder">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='50' viewBox='0 0 120 50'%3E%3Crect width='120' height='50' fill='%23e30713'/%3E%3Ctext x='60' y='30' font-family='Arial' font-size='14' fill='white' text-anchor='middle' font-weight='bold'%3ECroix-Rouge%3C/text%3E%3C/svg%3E" alt="logo croix-rouge" style="max-height:3rem;">
-              </div>
-            </div>
-            <div class="form-item">
-              <label>📋 Menu déroulant</label>
-              <div class="select-with-other">
-                <select id="select1">
-                  <option value="option1">Option A</option>
-                  <option value="option2" selected>Option B</option>
-                  <option value="option3">Option C</option>
-                  <option value="other">Autre…</option>
-                </select>
-                <input type="text" placeholder="Si 'Autre'" id="otherInput1" style="display:none;">
-              </div>
-            </div>
-            <div class="form-item">
-              <label>⚠️ Warning (conditionnel)</label>
-              <div class="warning-text" id="warning1">➡️ Remplissez les champs ci-dessus</div>
-            </div>
-          </div>
-        `
-      },
-      {
-        content: `
-          <div class="form-container">
-            <div class="form-item">
-              <label>📝 Titre (page 2)</label>
-              <input type="text" placeholder="Ex: Questionnaire" value="Sondage">
-            </div>
-            <div class="form-item">
-              <label>🔤 Texte libre</label>
-              <input type="text" placeholder="Votre réponse">
-            </div>
-            <div class="form-item">
-              <label>🔢 Âge (entier)</label>
-              <input type="number" step="1" placeholder="25" value="30">
-            </div>
-            <div class="form-item">
-              <label>🔢 Note (float)</label>
-              <input type="number" step="0.1" placeholder="4.5" value="3.8">
-            </div>
-            <div class="form-item">
-              <label>⚡ Acceptez-vous ?</label>
-              <div class="bool-group">
-                <label><input type="radio" name="bool2" value="true"> Oui</label>
-                <label><input type="radio" name="bool2" value="false" checked> Non</label>
-              </div>
-            </div>
-            <div class="form-item">
-              <label>🖼️ Image (exemple)</label>
-              <div class="image-placeholder">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='50' viewBox='0 0 120 50'%3E%3Crect width='120' height='50' fill='%23000'/%3E%3Ctext x='60' y='30' font-family='Arial' font-size='14' fill='%23e30713' text-anchor='middle' font-weight='bold'%3E❤️ Croix-Rouge%3C/text%3E%3C/svg%3E" alt="logo sombre" style="max-height:3rem;">
-              </div>
-            </div>
-            <div class="form-item">
-              <label>📋 Choix</label>
-              <div class="select-with-other">
-                <select id="select2">
-                  <option value="x">X</option>
-                  <option value="y" selected>Y</option>
-                  <option value="z">Z</option>
-                  <option value="other">Autre…</option>
-                </select>
-                <input type="text" placeholder="Si 'Autre'" id="otherInput2" style="display:none;">
-              </div>
-            </div>
-            <div class="form-item">
-              <label>⚠️ Info</label>
-              <div class="warning-text" id="warning2">📌 Sélectionnez une option</div>
-            </div>
-          </div>
-        `
-      }
-    ];
+    <script>
+        (function() {
+            // ================================================================
+            //  PAGES : 2 pages d'exemple avec tous les types de champs
+            //  Ajoutez, supprimez ou modifiez les pages dans ce tableau.
+            //  Chaque page : { content: HTML }
+            // ================================================================
+            const PAGES = [{
+  content: `
+    <div class="form-container">
+    <div class="form-item" style="justify-content: flex-start; padding-top: 0.5rem;">
+        <h2 style="font-size: 1.3rem; font-weight: 700; color: #e30713; margin: 0; width: 100%; text-align: center; letter-spacing: 1px;">👤 Informations personel</h2>
+      </div>
+      <div class="form-item">
+        <label>⚥ Sexe masculin</label>
+        <div class="bool-group">
+          <label><input type="checkbox" id="sexMale"> Oui</label>
+        </div>
+      </div>
+      <div class="form-item">
+        <label>👤 Nom</label>
+        <input type="text" id="lastName" placeholder="Nom" value="">
+      </div>
+      <div class="form-item">
+        <label>👤 Prénom</label>
+        <input type="text" id="firstName" placeholder="Prénom" value="">
+      </div>
+      <div class="form-item">
+        <label>📅 Date de naissance</label>
+        <input type="date" id="birthdate" placeholder="JJ/MM/AAAA" value="">
+        <div class="warning-text" id="ageWarning"></div>
+      </div>
+      <div class="form-item">
+        <label>🔢 Numéro de dossard</label>
+        <input type="number" step="1" id="dossard" placeholder="Numéro de dossard" value="">
+      </div>
+    </div>
+  `
+},
+{
+  content: `
+    <div class="form-container">
+      <div class="form-item" style="justify-content: flex-start; padding-top: 0.5rem;">
+        <h2 style="font-size: 1.3rem; font-weight: 700; color: #e30713; margin: 0; width: 100%; text-align: center; letter-spacing: 1px;">📋 Bilan Circonstanciel</h2>
+      </div>
+      <div class="form-item">
+        <label>📝 Motif d'intervention</label>
+        <input type="text" id="motif" placeholder="Saisissez le motif d'intervention" value="">
+      </div>
+    </div>
+  `
+},
+{
+  content: `
+    <div class="form-container">
+      <div class="form-item" style="justify-content: flex-start; padding-top: 0.2rem;">
+        <h2 style="font-size: 1.2rem; font-weight: 700; color: #e30713; margin: 0; width: 100%; text-align: center; letter-spacing: 1px;">❤️ Circulatoires</h2>
+      </div>
+      
+      <div class="form-item">
+        <label>💓 Fréquence cardiaque <span style="font-size:0.7rem; opacity:0.6;">(/min)</span></label>
+        <input type="number" step="1" id="freqCardiaque" placeholder="Fréquence cardiaque" value="">
+        <div class="warning-text" id="freqWarning"></div>
+      </div>
+      
+      <div class="form-item">
+        <label>📊 Quantification du pouls</label>
+        <select id="quantifPouls">
+          <option value="">Sélectionnez...</option>
+          <option value="bien_percu">Bien perçu</option>
+          <option value="filant">Filant</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+      
+      <div class="form-item">
+        <label>🔄 Pouls régulier ?</label>
+        <div class="bool-group">
+          <label><input type="checkbox" id="poulsRegulier"> Oui</label>
+        </div>
+      </div>
+      
+      <div class="form-item">
+        <label>🔄 Pouls symétrique ?</label>
+        <div class="bool-group">
+          <label><input type="checkbox" id="poulsSymmetric"> Oui</label>
+        </div>
+      </div>
+      
+      <div class="form-item">
+        <label>📍 Site de prise</label>
+        <select id="sitePrise">
+          <option value="">Sélectionnez...</option>
+          <option value="radial">Radial</option>
+          <option value="carotide">Carotide</option>
+          <option value="femoral">Fémoral</option>
+          <option value="pedieux">Pédieux</option>
+        </select>
+      </div>
+      
+      <div class="form-item">
+        <label>🩸 P.A gauche <span style="font-size:0.7rem; opacity:0.6;">(mmHg)</span></label>
+        <div style="display:flex; gap:0.5rem; width:100%;">
+          <input type="number" step="1" id="paGaucheSyst" placeholder="Systolique" style="flex:1;">
+          <input type="number" step="1" id="paGaucheDiast" placeholder="Diastolique" style="flex:1;">
+        </div>
+        <div class="warning-text" id="paGaucheWarning"></div>
+      </div>
+      
+      <div class="form-item">
+        <label>🩸 P.A droite <span style="font-size:0.7rem; opacity:0.6;">(mmHg)</span></label>
+        <div style="display:flex; gap:0.5rem; width:100%;">
+          <input type="number" step="1" id="paDroiteSyst" placeholder="Systolique" style="flex:1;">
+          <input type="number" step="1" id="paDroiteDiast" placeholder="Diastolique" style="flex:1;">
+        </div>
+        <div class="warning-text" id="paDroiteWarning"></div>
+      </div>
+    </div>
+  `
+}, {
+  content: `
+    <div class="form-container" style="justify-content: center; padding: 0.5rem;">
+      <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 12px; background: var(--bg-page);">
+        <img 
+          src="https://lost-cyrano.github.io/BilanPSE/bilan.jpg" 
+          alt="Bilan PSE - Paramètres vitaux" 
+          style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px;"
+          loading="lazy"
+        >
+      </div>
+    </div>
+  `
+}];
 
-    // ================================================================
-    //  CODE DE NAVIGATION (NE PAS MODIFIER)
-    // ================================================================
-    const track = document.getElementById('pagesTrack');
-    const pagination = document.getElementById('pagination');
-    let currentIndex = 0;
-    let isTransitioning = false;
-    let startX = 0, startY = 0, deltaX = 0;
-    let isSwiping = false;
-    let swipeLock = false; // verrou pour éviter les conflits avec les inputs
-
-    function buildPages() {
-      track.innerHTML = '';
-      PAGES.forEach((pageData, index) => {
-        const pageDiv = document.createElement('div');
-        pageDiv.className = 'page';
-        pageDiv.innerHTML = pageData.content || `Page ${index + 1}`;
-        track.appendChild(pageDiv);
-      });
-      pagination.innerHTML = '';
-      PAGES.forEach((_, index) => {
-        const dot = document.createElement('span');
-        dot.className = 'dot';
-        if (index === 0) dot.classList.add('active');
-        pagination.appendChild(dot);
-      });
-      initOtherSelects();
-      initWarnings();
-    }
-
-    function initOtherSelects() {
-      document.querySelectorAll('.select-with-other').forEach((container) => {
-        const select = container.querySelector('select');
-        const otherInput = container.querySelector('input[type="text"]');
-        if (!select || !otherInput) return;
-        const toggleOther = () => {
-          if (select.value === 'other') {
-            otherInput.style.display = 'block';
-            otherInput.required = true;
-          } else {
-            otherInput.style.display = 'none';
-            otherInput.required = false;
-            otherInput.value = '';
+(function() {
+        const initPage = () => {
+          // Éléments
+          const freqInput = document.getElementById('freqCardiaque');
+          const freqWarning = document.getElementById('freqWarning');
+          const paGaucheSyst = document.getElementById('paGaucheSyst');
+          const paGaucheDiast = document.getElementById('paGaucheDiast');
+          const paGaucheWarning = document.getElementById('paGaucheWarning');
+          const paDroiteSyst = document.getElementById('paDroiteSyst');
+          const paDroiteDiast = document.getElementById('paDroiteDiast');
+          const paDroiteWarning = document.getElementById('paDroiteWarning');
+          
+          // Pour déterminer si patient est enfant ou adulte (on utilise la date de naissance de la page 1)
+          const getAge = () => {
+            const birthInput = document.getElementById('birthdate');
+            if (!birthInput || !birthInput.value) return null;
+            const birthDate = new Date(birthInput.value);
+            if (isNaN(birthDate)) return null;
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+              age--;
+            }
+            return age;
+          };
+          
+          // Warning fréquence cardiaque
+          if (freqInput && freqWarning) {
+            const updateFreqWarning = () => {
+              const age = getAge();
+              const value = parseInt(freqInput.value);
+              if (!age || isNaN(value) || value === 0) {
+                freqWarning.textContent = '';
+                return;
+              }
+              
+              const isEnfant = age < 18;
+              let message = '';
+              
+              if (isEnfant) {
+                if (value < 70) message = '⚠️ Fréquence trop basse pour un enfant (< 70/min)';
+                else if (value > 100) message = '⚠️ Fréquence trop haute pour un enfant (> 100/min)';
+              } else {
+                if (value < 60) message = '⚠️ Fréquence trop basse pour un adulte (< 60/min)';
+                else if (value > 100) message = '⚠️ Fréquence trop haute pour un adulte (> 100/min)';
+              }
+              
+              freqWarning.textContent = message;
+              freqWarning.style.color = message ? 'var(--warning-color)' : '';
+            };
+            freqInput.addEventListener('input', updateFreqWarning);
+            freqInput.addEventListener('change', updateFreqWarning);
+          }
+          
+          // Warning P.A gauche
+          if (paGaucheSyst && paGaucheDiast && paGaucheWarning) {
+            const updatePaGaucheWarning = () => {
+              const syst = parseInt(paGaucheSyst.value);
+              const diast = parseInt(paGaucheDiast.value);
+              let messages = [];
+              
+              if (!isNaN(syst) && syst > 0) {
+                if (syst < 100) messages.push('Systolique trop basse (< 100 mmHg)');
+                else if (syst > 140) messages.push('Systolique trop haute (> 140 mmHg)');
+              }
+              
+              if (!isNaN(diast) && diast > 0) {
+                if (diast < 50) messages.push('Diastolique trop basse (< 50 mmHg)');
+                else if (diast > 100) messages.push('Diastolique trop haute (> 100 mmHg)');
+              }
+              
+              paGaucheWarning.textContent = messages.join(' • ');
+              paGaucheWarning.style.color = messages.length ? 'var(--warning-color)' : '';
+            };
+            paGaucheSyst.addEventListener('input', updatePaGaucheWarning);
+            paGaucheSyst.addEventListener('change', updatePaGaucheWarning);
+            paGaucheDiast.addEventListener('input', updatePaGaucheWarning);
+            paGaucheDiast.addEventListener('change', updatePaGaucheWarning);
+          }
+          
+          // Warning P.A droite
+          if (paDroiteSyst && paDroiteDiast && paDroiteWarning) {
+            const updatePaDroiteWarning = () => {
+              const syst = parseInt(paDroiteSyst.value);
+              const diast = parseInt(paDroiteDiast.value);
+              let messages = [];
+              
+              if (!isNaN(syst) && syst > 0) {
+                if (syst < 100) messages.push('Systolique trop basse (< 100 mmHg)');
+                else if (syst > 140) messages.push('Systolique trop haute (> 140 mmHg)');
+              }
+              
+              if (!isNaN(diast) && diast > 0) {
+                if (diast < 50) messages.push('Diastolique trop basse (< 50 mmHg)');
+                else if (diast > 100) messages.push('Diastolique trop haute (> 100 mmHg)');
+              }
+              
+              paDroiteWarning.textContent = messages.join(' • ');
+              paDroiteWarning.style.color = messages.length ? 'var(--warning-color)' : '';
+            };
+            paDroiteSyst.addEventListener('input', updatePaDroiteWarning);
+            paDroiteSyst.addEventListener('change', updatePaDroiteWarning);
+            paDroiteDiast.addEventListener('input', updatePaDroiteWarning);
+            paDroiteDiast.addEventListener('change', updatePaDroiteWarning);
           }
         };
-        select.addEventListener('change', toggleOther);
-        toggleOther();
-      });
-    }
-
-    function initWarnings() {
-      const warn1 = document.getElementById('warning1');
-      if (warn1) {
-        const titleInput = document.querySelector('.page:first-child .form-item input[type="text"]');
-        if (titleInput) {
-          const updateWarn1 = () => {
-            if (titleInput.value.trim().length < 2) {
-              warn1.textContent = '⚠️ Le titre doit faire au moins 2 caractères';
-              warn1.style.color = 'var(--warning-color)';
-            } else {
-              warn1.textContent = '✅ Titre valide !';
-              warn1.style.color = 'var(--warning-valid)';
-            }
-          };
-          titleInput.addEventListener('input', updateWarn1);
-          updateWarn1();
+        
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initPage);
+        } else {
+          initPage();
         }
+      })();
+
+// Script autonome pour la page 1
+(function() {
+  // Attendre que le DOM soit prêt
+  const initPage1 = () => {
+    const birthInput = document.getElementById('birthdate');
+    const ageWarning = document.getElementById('ageWarning');
+    
+    if (!birthInput || !ageWarning) return;
+    
+    const calculateAge = (birthDate) => {
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
       }
-      const warn2 = document.getElementById('warning2');
-      if (warn2) {
-        const select2 = document.getElementById('select2');
-        if (select2) {
-          const updateWarn2 = () => {
-            if (select2.value === 'other') {
-              warn2.textContent = '📝 Vous avez choisi "Autre", précisez ci-contre';
-              warn2.style.color = 'var(--warning-color)';
-            } else {
-              warn2.textContent = '✅ Option sélectionnée : ' + select2.options[select2.selectedIndex].text;
-              warn2.style.color = 'var(--warning-valid)';
-            }
-          };
-          select2.addEventListener('change', updateWarn2);
-          updateWarn2();
-        }
-      }
-    }
-
-    function updateSlide(index, animate = true) {
-      if (index < 0) index = 0;
-      if (index >= PAGES.length) index = PAGES.length - 1;
-      currentIndex = index;
-      const offset = -index * 100;
-      track.style.transition = animate ? 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none';
-      track.style.transform = `translateX(${offset}%)`;
-      const dots = pagination.querySelectorAll('.dot');
-      dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
-    }
-
-    function initSwipe() {
-      // On utilise la capture d'événements pour détecter si l'utilisateur interagit avec un input
-      let isOnInput = false;
-
-      // Détecter si le focus est sur un input
-      document.addEventListener('focusin', (e) => {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
-          isOnInput = true;
-        }
-      });
-      document.addEventListener('focusout', (e) => {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
-          isOnInput = false;
-        }
-      });
-
-      const handleStart = (x, y, target) => {
-        // Si l'utilisateur interagit avec un input, on bloque le swipe
-        if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.closest('input') || target.closest('select')) {
-          swipeLock = true;
-          return;
-        }
-        swipeLock = false;
-        if (isTransitioning) return;
-        startX = x;
-        startY = y;
-        isSwiping = true;
-        deltaX = 0;
-        track.style.transition = 'none';
-      };
-
-      const handleMove = (x, y) => {
-        if (swipeLock || !isSwiping) return;
-        const diffX = x - startX;
-        const diffY = y - startY;
-        if (Math.abs(diffX) > 8 && Math.abs(diffX) > Math.abs(diffY) * 1.2) {
-          const currentOffset = -currentIndex * 100;
-          const percentMove = (diffX / track.parentElement.offsetWidth) * 100;
-          let newOffset = currentOffset + percentMove;
-          if (currentIndex === 0 && newOffset > 0) newOffset = newOffset * 0.25;
-          if (currentIndex === PAGES.length - 1 && newOffset < -(PAGES.length - 1) * 100) {
-            const maxOffset = -(PAGES.length - 1) * 100;
-            newOffset = maxOffset + (newOffset - maxOffset) * 0.25;
-          }
-          track.style.transform = `translateX(${newOffset}%)`;
-          deltaX = diffX;
-        }
-      };
-
-      const handleEnd = () => {
-        if (swipeLock) {
-          swipeLock = false;
-          return;
-        }
-        if (!isSwiping) {
-          track.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-          return;
-        }
-        isSwiping = false;
-        track.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-        const threshold = 25;
-        if (deltaX < -threshold && currentIndex < PAGES.length - 1) currentIndex++;
-        else if (deltaX > threshold && currentIndex > 0) currentIndex--;
-        updateSlide(currentIndex, true);
-        deltaX = 0;
-      };
-
-      // Événements tactiles avec vérification de la cible
-      track.addEventListener('touchstart', (e) => {
-        const touch = e.touches[0];
-        const target = document.elementFromPoint(touch.clientX, touch.clientY);
-        handleStart(touch.clientX, touch.clientY, target);
-      }, { passive: true });
-
-      track.addEventListener('touchmove', (e) => {
-        const touch = e.touches[0];
-        handleMove(touch.clientX, touch.clientY);
-        if (isSwiping && Math.abs(deltaX) > 15) {
-          e.preventDefault();
-        }
-      }, { passive: false });
-
-      track.addEventListener('touchend', handleEnd, { passive: true });
-
-      // Événements souris
-      let mouseDown = false;
-      track.addEventListener('mousedown', (e) => {
-        const target = e.target;
-        if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.closest('input') || target.closest('select')) {
-          swipeLock = true;
-          return;
-        }
-        swipeLock = false;
-        mouseDown = true;
-        handleStart(e.clientX, e.clientY, target);
-        e.preventDefault();
-      });
-
-      window.addEventListener('mousemove', (e) => {
-        if (!mouseDown) return;
-        handleMove(e.clientX, e.clientY);
-      });
-
-      window.addEventListener('mouseup', () => {
-        if (mouseDown) {
-          mouseDown = false;
-          handleEnd();
-        }
-      });
-
-      track.addEventListener('mouseleave', () => {
-        if (mouseDown) {
-          mouseDown = false;
-          handleEnd();
-        }
-      });
-    }
-
-    // --- INIT ---
-    buildPages();
-    updateSlide(0, false);
-    initSwipe();
-
-    // API externe
-    window.__swipeApp = {
-      addPage: function(pageData) {
-        if (!pageData.content) pageData.content = `Page ${PAGES.length + 1}`;
-        PAGES.push(pageData);
-        const app = document.getElementById('app');
-        const oldTrack = document.getElementById('pagesTrack');
-        const oldPagination = document.getElementById('pagination');
-        const newTrack = document.createElement('div');
-        newTrack.id = 'pagesTrack';
-        newTrack.className = 'pages-track';
-        const newPagination = document.createElement('div');
-        newPagination.id = 'pagination';
-        newPagination.className = 'pagination';
-        oldTrack.parentNode.replaceChild(newTrack, oldTrack);
-        oldPagination.parentNode.replaceChild(newPagination, oldPagination);
-        window.__swipeApp.track = newTrack;
-        window.__swipeApp.pagination = newPagination;
-        buildPages();
-        updateSlide(0, false);
-        initSwipe();
-        console.log('📄 Page ajoutée ! Total :', PAGES.length);
-      },
-      getPages: () => PAGES,
-      goTo: function(index) { if (index >= 0 && index < PAGES.length) updateSlide(index, true); }
+      return age;
     };
-    window.__swipeApp.track = track;
-    window.__swipeApp.pagination = pagination;
-    console.log('📱 Swipe App – Pour ajouter une page : __swipeApp.addPage({ content: "..." })');
-    console.log('📄 Pages :', PAGES.length);
-  })();
-</script>
+    
+    const updateWarning = () => {
+      if (birthInput.value) {
+        const birthDate = new Date(birthInput.value);
+        if (!isNaN(birthDate)) {
+          const age = calculateAge(birthDate);
+          if (age < 18) {
+            ageWarning.textContent = '⚠️ Votre patient est mineur';
+            ageWarning.style.color = 'var(--warning-color)';
+          } else {
+            ageWarning.textContent = ''; // Pas de message si majeur
+          }
+        } else {
+          ageWarning.textContent = ''; // Date invalide → pas de message
+        }
+      } else {
+        ageWarning.textContent = ''; // Pas de date → pas de message
+      }
+    };
+    
+    birthInput.addEventListener('change', updateWarning);
+    birthInput.addEventListener('input', updateWarning);
+  };
+  
+  // Exécuter au chargement
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPage1);
+  } else {
+    initPage1();
+  }
+})();
+
+            // ================================================================
+            //  CODE DE NAVIGATION ET GESTION DU THÈME
+            // ================================================================
+            const track = document.getElementById('pagesTrack');
+            const pagination = document.getElementById('pagination');
+            const themeToggle = document.getElementById('themeToggle');
+            let currentIndex = 0;
+            let isTransitioning = false;
+            let startX = 0,
+                startY = 0,
+                deltaX = 0;
+            let isSwiping = false;
+            let swipeLock = false;
+
+            // --- Gestion du thème ---
+            let isDark = false;
+
+            function toggleTheme() {
+                isDark = !isDark;
+                document.body.classList.toggle('dark-theme', isDark);
+                themeToggle.textContent = isDark ? '☀️' : '🌓';
+                // Sauvegarder la préférence
+                try {
+                    localStorage.setItem('theme-pref', isDark ? 'dark' : 'light');
+                } catch (e) {}
+            }
+
+            function loadTheme() {
+                try {
+                    const saved = localStorage.getItem('theme-pref');
+                    if (saved === 'dark') {
+                        isDark = true;
+                        document.body.classList.add('dark-theme');
+                        themeToggle.textContent = '☀️';
+                    } else {
+                        isDark = false;
+                        document.body.classList.remove('dark-theme');
+                        themeToggle.textContent = '🌓';
+                    }
+                } catch (e) {
+                    // Par défaut : thème clair
+                    document.body.classList.remove('dark-theme');
+                    themeToggle.textContent = '🌓';
+                }
+            }
+
+            themeToggle.addEventListener('click', toggleTheme);
+
+            // --- Construction des pages ---
+            function buildPages() {
+                track.innerHTML = '';
+                PAGES.forEach((pageData, index) => {
+                    const pageDiv = document.createElement('div');
+                    pageDiv.className = 'page';
+                    pageDiv.innerHTML = pageData.content || `Page ${index + 1}`;
+                    track.appendChild(pageDiv);
+                });
+                pagination.innerHTML = '';
+                PAGES.forEach((_, index) => {
+                    const dot = document.createElement('span');
+                    dot.className = 'dot';
+                    if (index === 0) dot.classList.add('active');
+                    pagination.appendChild(dot);
+                });
+                initOtherSelects();
+                initWarnings();
+            }
+
+            function initOtherSelects() {
+                document.querySelectorAll('.select-with-other').forEach((container) => {
+                    const select = container.querySelector('select');
+                    const otherInput = container.querySelector('input[type="text"]');
+                    if (!select || !otherInput) return;
+                    const toggleOther = () => {
+                        if (select.value === 'other') {
+                            otherInput.style.display = 'block';
+                            otherInput.required = true;
+                        } else {
+                            otherInput.style.display = 'none';
+                            otherInput.required = false;
+                            otherInput.value = '';
+                        }
+                    };
+                    select.addEventListener('change', toggleOther);
+                    toggleOther();
+                });
+            }
+
+            function initWarnings() {
+                const warn1 = document.getElementById('warning1');
+                if (warn1) {
+                    const titleInput = document.querySelector('.page:first-child .form-item input[type="text"]');
+                    if (titleInput) {
+                        const updateWarn1 = () => {
+                            if (titleInput.value.trim().length < 2) {
+                                warn1.textContent = '⚠️ Le titre doit faire au moins 2 caractères';
+                                warn1.style.color = 'var(--warning-color)';
+                            } else {
+                                warn1.textContent = '✅ Titre valide !';
+                                warn1.style.color = 'var(--warning-valid)';
+                            }
+                        };
+                        titleInput.addEventListener('input', updateWarn1);
+                        updateWarn1();
+                    }
+                }
+                const warn2 = document.getElementById('warning2');
+                if (warn2) {
+                    const select2 = document.getElementById('select2');
+                    if (select2) {
+                        const updateWarn2 = () => {
+                            if (select2.value === 'other') {
+                                warn2.textContent = '📝 Vous avez choisi "Autre", précisez ci-contre';
+                                warn2.style.color = 'var(--warning-color)';
+                            } else {
+                                warn2.textContent = '✅ Option sélectionnée : ' + select2.options[select2.selectedIndex]
+                                    .text;
+                                warn2.style.color = 'var(--warning-valid)';
+                            }
+                        };
+                        select2.addEventListener('change', updateWarn2);
+                        updateWarn2();
+                    }
+                }
+            }
+
+            function updateSlide(index, animate = true) {
+                if (index < 0) index = 0;
+                if (index >= PAGES.length) index = PAGES.length - 1;
+                currentIndex = index;
+                const offset = -index * 100;
+                track.style.transition = animate ? 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none';
+                track.style.transform = `translateX(${offset}%)`;
+                const dots = pagination.querySelectorAll('.dot');
+                dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
+            }
+
+            // --- Gestion du swipe ---
+            function initSwipe() {
+                let isOnInput = false;
+
+                document.addEventListener('focusin', (e) => {
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+                        isOnInput = true;
+                    }
+                });
+                document.addEventListener('focusout', (e) => {
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+                        isOnInput = false;
+                    }
+                });
+
+                const handleStart = (x, y, target) => {
+                    if (target.tagName === 'INPUT' || target.tagName === 'SELECT' ||
+                        target.closest('input') || target.closest('select') ||
+                        target.closest('.theme-toggle')) {
+                        swipeLock = true;
+                        return;
+                    }
+                    swipeLock = false;
+                    if (isTransitioning) return;
+                    startX = x;
+                    startY = y;
+                    isSwiping = true;
+                    deltaX = 0;
+                    track.style.transition = 'none';
+                };
+
+                const handleMove = (x, y) => {
+                    if (swipeLock || !isSwiping) return;
+                    const diffX = x - startX;
+                    const diffY = y - startY;
+                    if (Math.abs(diffX) > 8 && Math.abs(diffX) > Math.abs(diffY) * 1.2) {
+                        const currentOffset = -currentIndex * 100;
+                        const percentMove = (diffX / track.parentElement.offsetWidth) * 100;
+                        let newOffset = currentOffset + percentMove;
+                        if (currentIndex === 0 && newOffset > 0) newOffset = newOffset * 0.25;
+                        if (currentIndex === PAGES.length - 1 && newOffset < -(PAGES.length - 1) * 100) {
+                            const maxOffset = -(PAGES.length - 1) * 100;
+                            newOffset = maxOffset + (newOffset - maxOffset) * 0.25;
+                        }
+                        track.style.transform = `translateX(${newOffset}%)`;
+                        deltaX = diffX;
+                    }
+                };
+
+                const handleEnd = () => {
+                    if (swipeLock) {
+                        swipeLock = false;
+                        return;
+                    }
+                    if (!isSwiping) {
+                        track.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                        return;
+                    }
+                    isSwiping = false;
+                    track.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                    const threshold = 25;
+                    if (deltaX < -threshold && currentIndex < PAGES.length - 1) currentIndex++;
+                    else if (deltaX > threshold && currentIndex > 0) currentIndex--;
+                    updateSlide(currentIndex, true);
+                    deltaX = 0;
+                };
+
+                track.addEventListener('touchstart', (e) => {
+                    const touch = e.touches[0];
+                    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                    handleStart(touch.clientX, touch.clientY, target);
+                }, { passive: true });
+
+                track.addEventListener('touchmove', (e) => {
+                    const touch = e.touches[0];
+                    handleMove(touch.clientX, touch.clientY);
+                    if (isSwiping && Math.abs(deltaX) > 15) {
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+
+                track.addEventListener('touchend', handleEnd, { passive: true });
+
+                let mouseDown = false;
+                track.addEventListener('mousedown', (e) => {
+                    const target = e.target;
+                    if (target.tagName === 'INPUT' || target.tagName === 'SELECT' ||
+                        target.closest('input') || target.closest('select') ||
+                        target.closest('.theme-toggle')) {
+                        swipeLock = true;
+                        return;
+                    }
+                    swipeLock = false;
+                    mouseDown = true;
+                    handleStart(e.clientX, e.clientY, target);
+                    e.preventDefault();
+                });
+
+                window.addEventListener('mousemove', (e) => {
+                    if (!mouseDown) return;
+                    handleMove(e.clientX, e.clientY);
+                });
+
+                window.addEventListener('mouseup', () => {
+                    if (mouseDown) {
+                        mouseDown = false;
+                        handleEnd();
+                    }
+                });
+
+                track.addEventListener('mouseleave', () => {
+                    if (mouseDown) {
+                        mouseDown = false;
+                        handleEnd();
+                    }
+                });
+            }
+
+            // --- INIT ---
+            loadTheme();
+            buildPages();
+            updateSlide(0, false);
+            initSwipe();
+
+            // API externe
+            window.__swipeApp = {
+                addPage: function(pageData) {
+                    if (!pageData.content) pageData.content = `Page ${PAGES.length + 1}`;
+                    PAGES.push(pageData);
+                    const app = document.getElementById('app');
+                    const oldTrack = document.getElementById('pagesTrack');
+                    const oldPagination = document.getElementById('pagination');
+                    const newTrack = document.createElement('div');
+                    newTrack.id = 'pagesTrack';
+                    newTrack.className = 'pages-track';
+                    const newPagination = document.createElement('div');
+                    newPagination.id = 'pagination';
+                    newPagination.className = 'pagination';
+                    oldTrack.parentNode.replaceChild(newTrack, oldTrack);
+                    oldPagination.parentNode.replaceChild(newPagination, oldPagination);
+                    window.__swipeApp.track = newTrack;
+                    window.__swipeApp.pagination = newPagination;
+                    buildPages();
+                    updateSlide(0, false);
+                    initSwipe();
+                    console.log('📄 Page ajoutée ! Total :', PAGES.length);
+                },
+                getPages: () => PAGES,
+                goTo: function(index) {
+                    if (index >= 0 && index < PAGES.length) updateSlide(index, true);
+                }
+            };
+            window.__swipeApp.track = track;
+            window.__swipeApp.pagination = pagination;
+            console.log('📱 Swipe App – Pour ajouter une page : __swipeApp.addPage({ content: "..." })');
+            console.log('📄 Pages :', PAGES.length);
+        })();
+    </script>
 </body>
 </html>
