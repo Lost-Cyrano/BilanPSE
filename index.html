@@ -1,1 +1,397 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Swipable · 6 pages</title>
+  <style>
+    /* ----- reset & base ----- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      touch-action: pan-y; /* permet le scroll vertical si besoin, mais on gère horizontal */
+    }
+
+    /* conteneur principal – occupe tout l'écran sur mobile */
+    .app {
+      position: relative;
+      width: 100%;
+      max-width: 480px;    /* agréable sur tablette/petit desktop */
+      height: 100vh;
+      height: 100dvh;      /* dynamic viewport height pour mobile */
+      max-height: 900px;
+      background: #1a1a2e;
+      overflow: hidden;
+      box-shadow: 0 0 40px rgba(0,0,0,0.6);
+      touch-action: pan-y; /* neutralise le scroll horizontal natif */
+    }
+
+    /* le "track" qui glisse horizontalement */
+    .pages-track {
+      display: flex;
+      flex-wrap: nowrap;
+      height: 100%;
+      width: 100%;
+      transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      will-change: transform;
+      touch-action: pan-y;  /* on garde le controle du swipe horizontal via JS */
+    }
+
+    /* chaque page occupe 100% de la largeur du conteneur */
+    .page {
+      flex: 0 0 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem 1.5rem;
+      color: #f0f0f0;
+      font-size: 1.6rem;
+      font-weight: 500;
+      text-align: center;
+      background: #1a1a2e;
+      border-right: 1px solid rgba(255,255,255,0.04);
+      user-select: none;
+      overflow-y: auto;    /* si contenu long, scroll vertical à l'intérieur */
+    }
+
+    /* couleurs différentes pour visualiser les pages */
+    .page:nth-child(1) { background: #16213e; }
+    .page:nth-child(2) { background: #0f3460; }
+    .page:nth-child(3) { background: #533483; }
+    .page:nth-child(4) { background: #3b185f; }
+    .page:nth-child(5) { background: #1b1a3a; }
+    .page:nth-child(6) { background: #2a1e4a; }
+
+    /* numéro de page en gros */
+    .page-number {
+      font-size: 5rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.15);
+      margin-bottom: 0.5rem;
+      line-height: 1;
+    }
+
+    .page-label {
+      font-size: 1.2rem;
+      opacity: 0.7;
+      letter-spacing: 1px;
+    }
+
+    /* indicateur de pagination (dots) */
+    .pagination {
+      position: absolute;
+      bottom: 24px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      pointer-events: none;  /* on clique à travers pour ne pas bloquer le swipe */
+      z-index: 5;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      transition: background 0.25s, transform 0.25s;
+      pointer-events: none;
+    }
+
+    .dot.active {
+      background: #f5c842;
+      transform: scale(1.3);
+      box-shadow: 0 0 12px rgba(245, 200, 66, 0.4);
+    }
+
+    /* petit footer d'info / aide */
+    .hint {
+      position: absolute;
+      bottom: 68px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      color: rgba(255,255,255,0.2);
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      pointer-events: none;
+      z-index: 4;
+      font-weight: 300;
+    }
+
+    /* ----- responsive fine tuning ----- */
+    @media (max-width: 480px) {
+      .page {
+        padding: 1.5rem 1rem;
+        font-size: 1.4rem;
+      }
+      .page-number {
+        font-size: 4rem;
+      }
+    }
+
+    @media (max-height: 600px) {
+      .page-number {
+        font-size: 3.2rem;
+      }
+      .page {
+        padding: 1rem;
+      }
+      .pagination {
+        bottom: 12px;
+        gap: 8px;
+      }
+      .hint {
+        bottom: 44px;
+        font-size: 0.6rem;
+      }
+    }
+
+    /* pour les écrans larges on garde une belle mise en page */
+    @media (min-width: 600px) {
+      .app {
+        border-radius: 24px;
+        height: 90vh;
+        max-height: 800px;
+        margin: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="pages-track" id="pagesTrack">
+  </div>
+
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<script>
+  (function() {
+    // ----- CONFIGURATION FACILE À MODIFIER -----
+    // Ajoutez, supprimez ou modifiez des pages dans ce tableau.
+    // Chaque page est un objet { content: "votre texte" }
+    // Vous pouvez aussi ajouter des classes ou styles si besoin.
+    const PAGES = [
+      { content: "🏝️<br><span style='font-size:2rem;'>Page 1</span><br><span style='font-size:1rem; opacity:0.6;'>Bienvenue</span>" },
+      { content: "🌸<br><span style='font-size:2rem;'>Page 2</span><br><span style='font-size:1rem; opacity:0.6;'>Découverte</span>" },
+      { content: "🌿<br><span style='font-size:2rem;'>Page 3</span><br><span style='font-size:1rem; opacity:0.6;'>Exploration</span>" },
+      { content: "🌊<br><span style='font-size:2rem;'>Page 4</span><br><span style='font-size:1rem; opacity:0.6;'>Profondeur</span>" },
+      { content: "🔥<br><span style='font-size:2rem;'>Page 5</span><br><span style='font-size:1rem; opacity:0.6;'>Énergie</span>" },
+      { content: "🌙<br><span style='font-size:2rem;'>Page 6</span><br><span style='font-size:1rem; opacity:0.6;'>Sérénité</span>" }
+    ];
+
+
+    const track = document.getElementById('pagesTrack');
+    const pagination = document.getElementById('pagination');
+    let currentIndex = 0;
+    let isTransitioning = false;
+    let startX = 0;
+    let currentX = 0;
+    let isDragging = false;
+
+    function buildPages() {
+      track.innerHTML = '';
+      PAGES.forEach((pageData, index) => {
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'page';
+        pageDiv.innerHTML = pageData.content || `Page ${index + 1}`;
+        pageDiv.dataset.index = index;
+        track.appendChild(pageDiv);
+      });
+
+      pagination.innerHTML = '';
+      PAGES.forEach((_, index) => {
+        const dot = document.createElement('span');
+        dot.className = 'dot';
+        if (index === 0) dot.classList.add('active');
+        pagination.appendChild(dot);
+      });
+    }
+
+    function updateSlide(index, animate = true) {
+      if (index < 0) index = 0;
+      if (index >= PAGES.length) index = PAGES.length - 1;
+      currentIndex = index;
+
+      const offset = -index * 100;
+      track.style.transition = animate ? 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none';
+      track.style.transform = `translateX(${offset}%)`;
+
+      const dots = pagination.querySelectorAll('.dot');
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+      });
+    }
+
+    function initSwipe() {
+      let startX = 0;
+      let startY = 0;
+      let isSwiping = false;
+      let deltaX = 0;
+
+      const handleStart = (x, y) => {
+        if (isTransitioning) return;
+        startX = x;
+        startY = y;
+        isSwiping = true;
+        deltaX = 0;
+        track.style.transition = 'none';
+      };
+
+      const handleMove = (x, y) => {
+        if (!isSwiping) return;
+        const diffX = x - startX;
+        const diffY = y - startY;
+        if (Math.abs(diffX) > 10 && Math.abs(diffX) > Math.abs(diffY) * 1.2) {
+          const currentOffset = -currentIndex * 100;
+          const percentMove = (diffX / track.parentElement.offsetWidth) * 100;
+          let newOffset = currentOffset + percentMove;
+          if (currentIndex === 0 && newOffset > 0) newOffset = newOffset * 0.3;
+          if (currentIndex === PAGES.length - 1 && newOffset < -(PAGES.length - 1) * 100) {
+            const maxOffset = -(PAGES.length - 1) * 100;
+            newOffset = maxOffset + (newOffset - maxOffset) * 0.3;
+          }
+          track.style.transform = `translateX(${newOffset}%)`;
+          deltaX = diffX;
+        }
+      };
+
+      const handleEnd = () => {
+        if (!isSwiping) {
+          track.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+          return;
+        }
+        isSwiping = false;
+        track.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+
+        const threshold = 30;
+        if (deltaX < -threshold && currentIndex < PAGES.length - 1) {
+          currentIndex++;
+        } else if (deltaX > threshold && currentIndex > 0) {
+          currentIndex--;
+        }
+        updateSlide(currentIndex, true);
+        deltaX = 0;
+      };
+
+      track.addEventListener('touchstart', (e) => {
+        const touch = e.touches[0];
+        handleStart(touch.clientX, touch.clientY);
+      }, { passive: true });
+
+      track.addEventListener('touchmove', (e) => {
+        const touch = e.touches[0];
+        handleMove(touch.clientX, touch.clientY);
+        if (isSwiping && Math.abs(deltaX) > 20) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      track.addEventListener('touchend', (e) => {
+        handleEnd();
+      }, { passive: true });
+
+      let mouseDown = false;
+      track.addEventListener('mousedown', (e) => {
+        mouseDown = true;
+        handleStart(e.clientX, e.clientY);
+        e.preventDefault(); 
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!mouseDown) return;
+        handleMove(e.clientX, e.clientY);
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (mouseDown) {
+          mouseDown = false;
+          handleEnd();
+        }
+      });
+
+      track.addEventListener('mouseleave', () => {
+        if (mouseDown) {
+          mouseDown = false;
+          handleEnd();
+        }
+      });
+    }
+
+    buildPages();
+    updateSlide(0, false);
+    initSwipe();
+
+    window.__swipeApp = { updateSlide, currentIndex: () => currentIndex, PAGES };
+    window.__swipeApp.addPage = function(content) {
+      PAGES.push({ content: content || `Page ${PAGES.length + 1}` });
+      buildPages();
+      updateSlide(currentIndex, false);
+      const newTrack = track.cloneNode(true);
+      track.parentNode.replaceChild(newTrack, track);
+
+      resetApp();
+    };
+
+    function resetApp() {
+      const app = document.getElementById('app');
+      const oldTrack = document.getElementById('pagesTrack');
+      const oldPagination = document.getElementById('pagination');
+      
+      const newTrack = document.createElement('div');
+      newTrack.id = 'pagesTrack';
+      newTrack.className = 'pages-track';
+      
+      const newPagination = document.createElement('div');
+      newPagination.id = 'pagination';
+      newPagination.className = 'pagination';
+      
+      oldTrack.parentNode.replaceChild(newTrack, oldTrack);
+      oldPagination.parentNode.replaceChild(newPagination, oldPagination);
+      
+      const trackRef = document.getElementById('pagesTrack');
+      const paginationRef = document.getElementById('pagination');
+      
+      trackRef.innerHTML = '';
+      PAGES.forEach((pageData) => {
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'page';
+        pageDiv.innerHTML = pageData.content || 'Page';
+        trackRef.appendChild(pageDiv);
+      });
+      
+      paginationRef.innerHTML = '';
+      PAGES.forEach((_, index) => {
+        const dot = document.createElement('span');
+        dot.className = 'dot';
+        if (index === 0) dot.classList.add('active');
+        paginationRef.appendChild(dot);
+      });
+      
+      currentIndex = 0;
+      updateSlide(0, false);
+      initSwipe();
+    }
+
+
+  })();
+</script>
+</body>
+</html>
