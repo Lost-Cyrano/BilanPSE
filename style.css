@@ -521,10 +521,6 @@
         .page::-webkit-scrollbar-thumb:hover {
             background: #b0b4b9;
         }
-
-        /* ============================================================
-           UTILITAIRES
-           ============================================================ */
         .page {
             user-select: none;
             -webkit-user-select: none;
@@ -535,8 +531,6 @@
             user-select: text;
             -webkit-user-select: text;
         }
-
-        /* Espacement pour les groupes conditionnels */
         .conditional-group .form-group:last-child {
             margin-bottom: 0;
         }
