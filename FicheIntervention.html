@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Formulaire d'Intervention Médicale</title>
+    <!-- Liaison vers la feuille de style externe -->
+    <link rel="stylesheet" href="https://lost-cyrano.github.io/BilanPSE/style.css">
+    <!-- Pas de style interne pour ne pas interférer -->
+</head>
+<body>
+    <div class="container" id="app">
+        <!-- Header : uniquement le titre -->
+        <div class="header">
+            <span class="page-title" id="pageTitle">État Civil</span>
+        </div>
+
+        <!-- Swipe wrapper -->
+        <div class="swipe-wrapper" id="swipeWrapper">
+            <div class="pages-track" id="pagesTrack">
+                <!-- ============================================================
+                PAGE 1 - État Civil (avec tous les exemples d'inputs)
+                ============================================================ -->
+                <div class="page" data-index="0">
+                    
+                    <!-- TEXTE INDICATION -->
+                    <span class="text-indication">Veuillez renseigner les informations d'état civil de la victime.</span>
+                    
+                    <!-- INPUT STRING -->
+                    <div class="form-group">
+                        <label>Nom complet</label>
+                        <input type="text" placeholder="Nom et prénom">
+                    </div>
+                    
+                    <!-- INPUT INT -->
+                    <div class="form-group">
+                        <label>Âge</label>
+                        <input type="number" placeholder="Âge en années">
+                    </div>
+                    
+                    <!-- INPUT DATE -->
+                    <div class="form-group">
+                        <label>Date de naissance</label>
+                        <input type="date">
+                    </div>
+                    
+                    <!-- INPUT HEURE -->
+                    <div class="form-group">
+                        <label>Heure de naissance (optionnel)</label>
+                        <input type="time">
+                    </div>
+                    
+                    <!-- MENU DÉROULANT (SELECT) -->
+                    <div class="form-group">
+                        <label>Sexe</label>
+                        <select>
+                            <option value="">Sélectionner...</option>
+                            <option>Masculin</option>
+                            <option>Féminin</option>
+                            <option>Autre</option>
+                        </select>
+                    </div>
+                    
+                    <!-- CASES À COCHER (CHECKBOX) -->
+                    <div class="form-group">
+                        <label>Antécédents familiaux</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" value="diabete"> Diabète</label>
+                            <label><input type="checkbox" value="cardiaque"> Cardiaque</label>
+                            <label><input type="checkbox" value="hypertension"> Hypertension</label>
+                            <label><input type="checkbox" value="autre"> Autre</label>
+                        </div>
+                    </div>
+                    
+                    <!-- INPUT PARAGRAPHE (TEXTAREA) -->
+                    <div class="form-group">
+                        <label>Observations complémentaires</label>
+                        <textarea placeholder="Décrivez tout élément pertinent..."></textarea>
+                    </div>
+                    
+                    <!-- TEXTE AVERTISSEMENT -->
+                    <span class="text-warning">Assurez-vous de vérifier l'identité de la victime avec une pièce d'identité.</span>
+                    
+                    <!-- TEXTE INFO SIMPLE -->
+                    <span class="text-info">Les champs marqués d'un astérisque sont obligatoires.</span>
+                    
+                    <!-- GROUPE CONDITIONNEL (affichage/masquage) -->
+                    <!-- Exemple : ce groupe s'affiche si la case "Autre" est cochée -->
+                    <div class="conditional-group" id="conditionalExample">
+                        <div class="form-group">
+                            <label>Précisez l'autre antécédent</label>
+                            <input type="text" placeholder="Décrivez...">
+                        </div>
+                    </div>
+                    
+                    <!-- Bouton de démonstration pour le conditionnel -->
+                    <div class="form-group">
+                        <label>Activer le champ conditionnel (test)</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" id="toggleConditional"> Afficher le champ "Précisez l'autre antécédent"</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ============================================================
+                PAGES SUIVANTES (vides avec titre uniquement)
+                ============================================================ -->
+                <div class="page" data-index="1"><span class="text-info">Page 2 - Lieu d'Intervention</span></div>
+                <div class="page" data-index="2"><span class="text-info">Page 3 - Nature de l'Intervention</span></div>
+                <div class="page" data-index="3"><span class="text-info">Page 4 - Horaires</span></div>
+                <div class="page" data-index="4"><span class="text-info">Page 5 - Témoin Visuel</span></div>
+                <div class="page" data-index="5"><span class="text-info">Page 6 - Devenir de la Victime</span></div>
+                <div class="page" data-index="6"><span class="text-info">Page 7 - Bilan Circonstanciel</span></div>
+                <div class="page" data-index="7"><span class="text-info">Page 8 - Bilan d'Urgence Vitale</span></div>
+                <div class="page" data-index="8"><span class="text-info">Page 9 - Bilan Conscience</span></div>
+                <div class="page" data-index="9"><span class="text-info">Page 10 - Bilan Ventilatoire</span></div>
+                <div class="page" data-index="10"><span class="text-info">Page 11 - Bilan Circulatoire</span></div>
+                <div class="page" data-index="11"><span class="text-info">Page 12 - Bilan Complémentaire</span></div>
+                <div class="page" data-index="12"><span class="text-info">Page 13 - Surveillance</span></div>
+                <div class="page" data-index="13"><span class="text-info">Page 14 - Observation</span></div>
+                <div class="page" data-index="14"><span class="text-info">Page 15 - Antécédents</span></div>
+                <div class="page" data-index="15"><span class="text-info">Page 16 - Gestes d'Urgence</span></div>
+                <div class="page" data-index="16"><span class="text-info">Page 17 - Soins Effectués</span></div>
+                <div class="page" data-index="17"><span class="text-info">Page 18 - Positions d'Attente</span></div>
+                <div class="page" data-index="18"><span class="text-info">Page 19 - Mise en Condition</span></div>
+            </div>
+        </div>
+
+        <!-- Footer : uniquement les points -->
+        <div class="footer-dots" id="dotsContainer"></div>
+    </div>
+
+    <script>
+        (function() {
+            // ---- Liste des titres ----
+            const TITLES = [
+                'État Civil',
+                'Lieu d\'Intervention',
+                'Nature de l\'Intervention',
+                'Horaires',
+                'Témoin Visuel',
+                'Devenir de la Victime',
+                'Bilan Circonstanciel',
+                'Bilan d\'Urgence Vitale',
+                'Bilan Conscience',
+                'Bilan Ventilatoire',
+                'Bilan Circulatoire',
+                'Bilan Complémentaire',
+                'Surveillance',
+                'Observation',
+                'Antécédents',
+                'Gestes d\'Urgence',
+                'Soins Effectués',
+                'Positions d\'Attente',
+                'Mise en Condition'
+            ];
+
+            const totalPages = TITLES.length;
+
+            // ---- Références DOM ----
+            const track = document.getElementById('pagesTrack');
+            const dotsContainer = document.getElementById('dotsContainer');
+            const pageTitle = document.getElementById('pageTitle');
+            const swipeWrapper = document.getElementById('swipeWrapper');
+
+            let currentIndex = 0;
+
+            // ---- Construction des dots ----
+            function buildDots() {
+                dotsContainer.innerHTML = '';
+                for (let i = 0; i < totalPages; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'dot' + (i === 0 ? ' active' : '');
+                    dot.dataset.index = i;
+                    dot.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const index = parseInt(this.dataset.index);
+                        if (index !== currentIndex) {
+                            goTo(index);
+                        }
+                    });
+                    dotsContainer.appendChild(dot);
+                }
+            }
+
+            // ---- Mise à jour ----
+            function updateUI() {
+                track.style.transform = `translateX(-${currentIndex * 100}%)`;
+                const dots = dotsContainer.querySelectorAll('.dot');
+                dots.forEach((dot, i) => {
+                    dot.classList.toggle('active', i === currentIndex);
+                });
+                pageTitle.textContent = TITLES[currentIndex];
+            }
+
+            // ---- Navigation ----
+            function goTo(index) {
+                if (index < 0) index = 0;
+                if (index >= totalPages) index = totalPages - 1;
+                if (index === currentIndex) return;
+                currentIndex = index;
+                updateUI();
+            }
+
+            function next() {
+                if (currentIndex < totalPages - 1) goTo(currentIndex + 1);
+            }
+
+            function prev() {
+                if (currentIndex > 0) goTo(currentIndex - 1);
+            }
+
+            // ---- Gestion du swipe ----
+            let startX = 0;
+            let startY = 0;
+            let isSwiping = false;
+            let isSwipingHorizontal = false;
+            let swipeThreshold = 40;
+
+            function onTouchStart(e) {
+                const touch = e.touches[0];
+                startX = touch.clientX;
+                startY = touch.clientY;
+                isSwiping = true;
+                isSwipingHorizontal = false;
+            }
+
+            function onTouchMove(e) {
+                if (!isSwiping) return;
+                const touch = e.touches[0];
+                const deltaX = touch.clientX - startX;
+                const deltaY = touch.clientY - startY;
+
+                if (!isSwipingHorizontal && Math.abs(deltaX) > 8) {
+                    if (Math.abs(deltaX) > Math.abs(deltaY) * 0.7) {
+                        isSwipingHorizontal = true;
+                    }
+                }
+
+                if (isSwipingHorizontal) {
+                    e.preventDefault();
+                }
+            }
+
+            function onTouchEnd(e) {
+                if (!isSwiping || !isSwipingHorizontal) {
+                    isSwiping = false;
+                    return;
+                }
+                isSwiping = false;
+                const touch = e.changedTouches[0];
+                const deltaX = touch.clientX - startX;
+                if (Math.abs(deltaX) > swipeThreshold) {
+                    if (deltaX < 0) {
+                        next();
+                    } else {
+                        prev();
+                    }
+                }
+                isSwipingHorizontal = false;
+            }
+
+            // ---- Clavier ----
+            function onKeyDown(e) {
+                if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    next();
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    prev();
+                }
+            }
+
+            // ---- Gestion du conditionnel (démonstration) ----
+            function initConditional() {
+                const toggle = document.getElementById('toggleConditional');
+                const conditional = document.getElementById('conditionalExample');
+                if (toggle && conditional) {
+                    toggle.addEventListener('change', function() {
+                        if (this.checked) {
+                            conditional.classList.add('visible');
+                        } else {
+                            conditional.classList.remove('visible');
+                        }
+                    });
+                }
+            }
+
+            // ---- Initialisation ----
+            function init() {
+                buildDots();
+                updateUI();
+
+                // Swipe
+                swipeWrapper.addEventListener('touchstart', onTouchStart, { passive: true });
+                swipeWrapper.addEventListener('touchmove', onTouchMove, { passive: false });
+                swipeWrapper.addEventListener('touchend', onTouchEnd, { passive: true });
+
+                // Clavier
+                document.addEventListener('keydown', onKeyDown);
+
+                // Conditionnel
+                initConditional();
+            }
+
+            init();
+        })();
+    </script>
+</body>
+</html>
